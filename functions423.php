@@ -14,7 +14,7 @@ function validate_tnam1($in) {
   }    
   strip_all($in);	
   if (strlen($in) <> 45) {return false;}	
-  $reg_tnam1 = '/tnam1[a-zA-Z0-9]{40}/i';	
+  $reg_tnam1 = '/tnam1[a-zA-Z0-9]{40}$/i';	
   return preg_match($reg_tnam1, $in);
 }
 
@@ -24,7 +24,7 @@ function validate_proposal_id($in) {
   }    
   strip_all($in);
   if (strlen($in) > 25) {return false;}
-  $reg_tnam1 = '/\d+/i';
+  $reg_tnam1 = '/\d+$/i';
   return preg_match($reg_tnam1, $in);
 }
 
