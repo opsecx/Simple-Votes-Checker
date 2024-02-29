@@ -5,9 +5,9 @@
 
 $db_host = 'localhost';
 $db_port = '5432';
-$db_name = 'dbname';  
-$db_user = 'dbuser';
-$db_password = 'dbpassword';
+$db_name = '***REMOVED***';  
+$db_user = '***REMOVED***';
+$db_password = '***REMOVED***';
 
 //end of user settings
 //leave the following untouched
