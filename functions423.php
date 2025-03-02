@@ -50,6 +50,40 @@ function hyperlink_proposal($in, $mode_arg) {
   return $returnstring;
 }
 
+function print_query_table($in_query, $in_dbconn) {
+  $results = pg_query($in_dbconn, $in_query) or die('could not fetch results');
+echo("<table>");
+
+if (!empty($table_headers)) {
+  foreach ($table_headers as $x) {
+     echo "<th>$x</th>";
+  }
+} else {
+  $i = 0;
+  while ($i < pg_num_fields($results)) {
+    echo('<th>' . pg_field_name($results, $i) . '</th>');
+  $i = $i + 1;
+  }
+}
+
+while ($line = pg_fetch_array($results, null, PGSQL_ASSOC)) {
+
+echo("\t<tr>\n");
+foreach ($line as $col_value) {
+   echo("\t\t<td>");
+    echo($col_value);
+   echo("</td>\n");
+  }
+  echo "\t</tr>\n";
+}
+echo "</table>\n";
+
+pg_free_result($results);
+
+
+}
+
+
 
 
 ?>

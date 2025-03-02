@@ -50,7 +50,7 @@ border: 1px solid;
 
 <?php
 if (!empty($maintenance)) {
-  echo("<div>Maintenance note: $maintenance</div><br><br>");
+  echo("<div>$maintenance</div><br><br>");
 }
 ?>
 
@@ -81,50 +81,27 @@ if (!empty($error)) {
 <button type="submit" name="mode" value="cast">Votes Cast Complete</button><br><br>
 Proposal Id:<input type="text" name="proposal_id" size ="11"><br><br>
 <button type="submit" name="mode" value="proposal">Proposal Votes</button>
-<button type="submit" name="mode" value="list_proposals">List all proposals (WIP)</button>
+<button type="submit" name="mode" value="list_proposals">Proposals Stats</button>
 </form>
 
 <?php
 //assume $dbconn opened by includes
 
 if ($run_mode == 'cast') {
-  $query = "SELECT ('x' || right(vote_proposal_id::bytea::text, 6))::bit(24)::int AS proposal_id, vote, voter, commit_height, header_time, tx_id FROM shielded_expedition.vote_proposal LEFT JOIN shielded_expedition.transactions ON tx_id = hash LEFT JOIN shielded_expedition.blocks ON transactions.block_id = blocks.block_id WHERE voter = '$address' ORDER BY 1 ASC";
+  $query = "SELECT id AS proposal_id, vote, voter, commit_height::numeric as block_height, TO_CHAR(header_time::timestamp, 'DD-MM-YYYY HH24:MI:SS') AS vote_time, TRIM(LEADING '\X' FROM UPPER(txid::varchar)) as tx_hash FROM $schema.tx_vote_proposal LEFT JOIN $schema.inner_transactions ON txid = hash LEFT JOIN $schema.blocks ON inner_transactions.block_id = blocks.block_id WHERE voter = '$address' ORDER BY 4 ASC";
 } elseif ($run_mode == 'cast_simple') {
-  $query = "SELECT DISTINCT ('x' || right(vote_proposal_id::bytea::text, 6))::bit(24)::int AS proposal_id,vote,voter FROM shielded_expedition.vote_proposal WHERE voter = '$address' ORDER BY 1 ASC";
+  $query = "SELECT DISTINCT id::numeric AS proposal_id,vote,voter FROM $schema.tx_vote_proposal WHERE voter = '$address' ORDER BY 1 ASC";
 } elseif ($run_mode == 'missing') {
-  $query = "SELECT DISTINCT ('x' || right(vote_proposal_id::bytea::text, 6))::bit(24)::int AS proposal_id FROM shielded_expedition.vote_proposal WHERE vote_proposal_id NOT IN (SELECT DISTINCT vote_proposal_id FROM shielded_expedition.vote_proposal WHERE voter = '$address') ORDER BY 1 ASC"; 
+  $query = "SELECT DISTINCT id AS missed_proposal_id FROM $schema.tx_vote_proposal WHERE id NOT IN (SELECT DISTINCT id FROM $schema.tx_vote_proposal WHERE voter = '$address') ORDER BY 1 ASC"; 
 } elseif ($run_mode == 'proposal') {
-  $query = "SELECT ('x' || right(vote_proposal_id::bytea::text, 6))::bit(24)::int AS proposal_id, vote, voter, commit_height, header_time, tx_id FROM shielded_expedition.vote_proposal LEFT JOIN shielded_expedition.transactions ON tx_id = hash LEFT JOIN shielded_expedition.blocks ON transactions.block_id = blocks.block_id WHERE ('x' || right(vote_proposal_id::bytea::text, 6))::bit(24)::int = $proposal_id ORDER BY 1 ASC";
+  $query = "SELECT id AS proposal_id, vote, voter, commit_height AS block_height, TO_CHAR(header_time::timestamp, 'DD-MM-YYYY HH24:MI:SS') AS vote_time, TRIM(LEADING '\X' FROM UPPER(txid::varchar)) as tx_hash FROM $schema.tx_vote_proposal LEFT JOIN $schema.inner_transactions ON txid = hash LEFT JOIN $schema.blocks ON inner_transactions.block_id = blocks.block_id WHERE id::numeric = $proposal_id ORDER BY 4 ASC";
 } elseif ($run_mode == 'list_proposals') {
-  $query = "SELECT DISTINCT ('x' || right(vote_proposal_id::bytea::text, 6))::bit(24)::int AS proposal_id FROM shielded_expedition.vote_proposal ORDER BY 1 ASC";
+  $query = "SELECT id::numeric AS proposal_id, count(vote) as vote_transactions, count(distinct voter) as voters FROM $schema.tx_vote_proposal GROUP BY id ORDER BY 1 ASC";
 }
 
 if ($run_mode == 'cast' or $run_mode == 'missing' or $run_mode == 'proposal' or $run_mode == 'list_proposals' or $run_mode == 'cast_simple') {
 
-$results = pg_query($dbconn, $query)
- or die('could not fetch results');
-
-echo "<table>\n";
-
-if ($run_mode == 'missing') {
-	echo('<th>proposal-id</th>');
-} elseif ($run_mode == 'cast') {
-	echo('<th>proposal-id</th><th>vote cast</th><th>address</th><th>block</th><th>date-time</th><th>transaction id</th>');
-} elseif ($run_mode == 'cast_simple') {
-  echo('<th>proposal-id</th><th>vote cast</th><th>address</th>');
-}
-
-while ($line = pg_fetch_array($results, null, PGSQL_ASSOC)) {
-    echo "\t<tr>\n";
-    foreach ($line as $col_value) {
-        echo "\t\t<td>$col_value</td>\n";
-    }
-    echo "\t</tr>\n";
-}
-echo "</table>\n";
-
-pg_free_result($results);
-pg_close($dbconn);
+print_query_table($query, $dbconn);
 
 //echo("test");
 
