@@ -7,6 +7,7 @@ The installation is pretty straightforward, but there are some prerequisites:
 
 Note: Namadexer has been discontinued from official development, but is developed on a community basis via Spork's fork.
 You will find this fork here: https://github.com/vknowable/namadexer
+
 2. PHP 8.1+, installed with either Apache or nginx, or another suitable webserver, with Postgre SQL module
 # Installation
 1. Place all php files in the package in the same directory, which is the directory served by your php-enabled webserver
